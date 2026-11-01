@@ -49,3 +49,14 @@ test("a minimal classic schema drops the registry symbols", async () => {
   expect(out, "registries.ts `$output` lost its @__PURE__ annotation").not.toContain("ZodOutput");
   expect(out, "registries.ts `$input` lost its @__PURE__ annotation").not.toContain("ZodInput");
 }, 30000);
+
+test("doc comments do not contain bare pure annotations that confuse Rollup", async () => {
+  const fs = await import("node:fs");
+  const regexes = fs.readFileSync(path.resolve(here, "../regexes.ts"), "utf8");
+  const util = fs.readFileSync(path.resolve(here, "../util.ts"), "utf8");
+
+  // Rollup matches /[@#]__PURE__/ in any comment; if present on a non-call statement comment,
+  // it emits an INVALID_ANNOTATION warning on Vite / Rollup builds.
+  expect(regexes).not.toMatch(/\/\*\*[\s\S]*?[@#]__PURE__[\s\S]*?\*\/\s*function/);
+  expect(util).not.toMatch(/\/\/.*?[@#]__PURE__.*?\n\s*export/);
+});
